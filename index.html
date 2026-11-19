@@ -35,7 +35,6 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
 .timer-overlay{position:fixed;inset:0;background:#000b;z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
 .timer-box{background:white;border-radius:22px;padding:28px;text-align:center;width:min(95vw,480px);box-shadow:0 15px 50px #0005}
 .timer-clock{font-size:clamp(76px,16vw,125px);font-weight:900;font-variant-numeric:tabular-nums;line-height:1.25}
-.vehicle-icon{font-size:40px;line-height:1}
 </style>
 </head>
 <body>
@@ -113,8 +112,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
   <div class="panel"><h2>Barns</h2><div class="row"><input id="newBarn" placeholder="Enter barn name" aria-label="New barn name"><button class="btn primary" onclick="addName('barn')">Add</button></div><div id="barnList"></div></div>
   <div class="panel"><h2>Fields</h2><div class="row"><input id="newField" placeholder="Enter field name" aria-label="New field name"><button class="btn primary" onclick="addName('field')">Add</button></div><div id="fieldList"></div></div>
  </div>
- <div class="panel"><h2>Loading timer settings</h2><div class="formgrid"><div><label for="tractorMinutes">Tractor minutes</label><input id="tractorMinutes" type="number" min="1" max="120" value="7"></div><div><label for="truckMinutes">Semi minutes</label><input id="truckMinutes" type="number" min="1" max="120" value="5"></div></div><p class="sub">Changes save automatically on this iPad.</p></div>
-  <div class="panel"><h2>Data & backup</h2><p class="sub">Your records are saved in this iPad's browser. Export the Excel workbook regularly as a backup.</p><div class="row"><button class="btn primary" onclick="exportWorkbook()">Export complete Excel workbook</button><button class="btn" onclick="downloadBackup()">Download data backup</button></div><div class="notice">Use this app on the same iPad and browser where loads are recorded. Clearing Safari website data or resetting the iPad can erase locally stored records.</div></div>
+ <div class="panel"><h2>Data & backup</h2><p class="sub">Your records are saved in this iPad's browser. Export the Excel workbook regularly as a backup.</p><div class="row"><button class="btn primary" onclick="exportWorkbook()">Export complete Excel workbook</button><button class="btn" onclick="downloadBackup()">Download data backup</button></div><div class="notice">Use this app on the same iPad and browser where loads are recorded. Clearing Safari website data or resetting the iPad can erase locally stored records.</div></div>
 </section>
 <footer>Manure Hauling Tracker · Records are stored on this iPad</footer>
 </main>
@@ -178,6 +176,45 @@ function exportWorkbook(){
 }
 function exportReport(){const data=exportRows(filtered());if(window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.length?data:[{'Load #':'No matching loads'}]),'Filtered Report');XLSX.writeFile(wb,'Manure_Hauling_Report.xlsx')}else{const csv=[Object.keys(data[0]||{'Load #':'','Date':'','Start Time':'','Equipment':'','Barn':'','Destination Field':'','Gallons':''}).join(','),...data.map(o=>Object.values(o).map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))].join('\\r\\n');saveBlob(new Blob([csv],{type:'text/csv'}),'Manure_Hauling_Report.csv')}}
 function downloadBackup(){saveBlob(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),'Manure_Hauling_Backup.json')}
+
+// Loading timer: load records are saved immediately; countdown is visual only.
+const TIMER_SETTINGS_KEY='manureHaulingTracker_timerSettings_v1';
+let timerInterval=null, timerEnd=0;
+function timerSettings(){
+ try{const x=JSON.parse(localStorage.getItem(TIMER_SETTINGS_KEY)||'{}');return {Tractor:validMinutes(x.Tractor,7),Truck:validMinutes(x.Truck,5)}}
+ catch(e){return {Tractor:7,Truck:5}}
+}
+function validMinutes(n,fallback){const v=Number(n);return Number.isFinite(v)&&v>=1&&v<=120?v:fallback}
+function startTimer(type){
+ finishTimer();
+ const mins=timerSettings()[type]||5;
+ timerEnd=Date.now()+mins*60000;
+ document.getElementById('timerOverlay').style.display='flex';
+ updateTimerClock();
+ timerInterval=setInterval(updateTimerClock,250);
+}
+function updateTimerClock(){
+ const remaining=Math.max(0,Math.ceil((timerEnd-Date.now())/1000));
+ const m=Math.floor(remaining/60),sec=remaining%60;
+ document.getElementById('timerClock').textContent=String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');
+ if(remaining===0)finishTimer();
+}
+function finishTimer(){
+ if(timerInterval!==null){clearInterval(timerInterval);timerInterval=null}
+ document.getElementById('timerOverlay').style.display='none';
+}
+function initializeTimerSettings(){
+ const values=timerSettings();
+ const tractor=document.getElementById('tractorMinutes'),truck=document.getElementById('truckMinutes');
+ tractor.value=values.Tractor;truck.value=values.Truck;
+ [tractor,truck].forEach(el=>el.addEventListener('change',()=>{
+   const old=timerSettings(),type=el===tractor?'Tractor':'Truck';
+   const v=validMinutes(el.value,old[type]);el.value=v;old[type]=v;
+   localStorage.setItem(TIMER_SETTINGS_KEY,JSON.stringify(old));
+ }));
+}
+initializeTimerSettings();
+
 renderAll();renderReport();
 loadSelectionIds.forEach(id=>document.getElementById(id).addEventListener('change',rememberSelections));
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline support unavailable',e)))}
