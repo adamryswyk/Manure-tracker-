@@ -21,7 +21,7 @@ main{max-width:1100px;margin:18px auto;padding:0 14px 40px}.view{display:none}.v
 select,input{width:100%;padding:13px;border:1px solid #cbd8ce;border-radius:10px;background:#fff;color:var(--ink);font-size:16px;min-height:48px}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
 .big{border:0;border-radius:14px;color:white;padding:20px 12px;min-height:110px;font-weight:800;font-size:19px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;box-shadow:0 3px 0 #0001}
-.big small{font-size:13px;font-weight:600;opacity:.9}.truck{background:#245b91}.tractor{background:#236342}.big:active{transform:translateY(1px)}
+.big small{font-size:13px;font-weight:600;opacity:.9}.truck{background:#245b91}.tractor{background:#a83232}.vehicle-icon{width:110px;height:54px;display:block}.big{width:100%}.big:active{transform:translateY(1px)}
 button{cursor:pointer}.btn{border:1px solid #cbd8ce;background:#fff;border-radius:10px;padding:11px 14px;font-size:14px;font-weight:700;color:var(--ink)}.primary{background:var(--green2);border-color:var(--green2);color:white}.danger{color:var(--red);border-color:#e5bcbc}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
 table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:11px 9px;border-bottom:1px solid var(--line);vertical-align:top}th{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.04em}td.num{text-align:right;font-variant-numeric:tabular-nums} .tablewrap{overflow:auto}
 .pill{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:800;background:#eaf1ec;color:var(--green)}
@@ -31,6 +31,13 @@ table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;p
 footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
 @media(max-width:700px){.grid{grid-template-columns:1fr 1fr}.manage{grid-template-columns:1fr}.formgrid{grid-template-columns:1fr}.stats{padding:13px}.actions{gap:9px}.big{font-size:17px;min-height:104px}main{padding-left:11px;padding-right:11px}nav{padding:0 12px}}
 @media(min-width:701px){header{padding-left:20px;padding-right:20px}}
+
+.timer-overlay{position:fixed;inset:0;background:#0009;z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.timer-overlay.visible{display:flex}
+.timer-dialog{background:white;border-radius:22px;padding:28px 20px;text-align:center;width:min(460px,100%);box-shadow:0 15px 60px #0005}
+.timer-dialog h2{font-size:28px;margin:0 0 14px}
+.timer-clock{font-size:clamp(70px,15vw,112px);font-weight:850;font-variant-numeric:tabular-nums;letter-spacing:-4px;color:#173d2b;margin:10px 0 22px}
+.timer-dialog .btn{font-size:20px;padding:15px 26px}
 </style>
 </head>
 <body>
@@ -54,9 +61,9 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
  <div class="panel">
   <h2>Start a new load</h2>
   <div class="actions">
-   <div class="panel"><button class="big truck" onclick="addLoad('Truck',7000)">🚚 7,000-Gallon Truck<small>Tap when filling starts</small></button>
+   <div class="panel"><button class="big truck" onclick="addLoad('Truck',7000)"><svg class="vehicle-icon" viewBox="0 0 150 70" aria-label="White semi with silver tanker" role="img"><rect x="45" y="12" width="96" height="35" rx="17" fill="#c5cbd0" stroke="#68757d" stroke-width="2"/><path d="M45 28H10L3 43v12h60V35H45Z" fill="#fff" stroke="#64717b" stroke-width="2"/><path d="M14 31h19v13H9Z" fill="#b4d9ee"/><rect x="54" y="47" width="88" height="7" rx="2" fill="#7c858d"/><circle cx="25" cy="55" r="10" fill="#29333c"/><circle cx="25" cy="55" r="4" fill="#ddd"/><circle cx="104" cy="55" r="10" fill="#29333c"/><circle cx="104" cy="55" r="4" fill="#ddd"/><circle cx="129" cy="55" r="10" fill="#29333c"/><circle cx="129" cy="55" r="4" fill="#ddd"/></svg>7,000-Gallon Truck<small>Tap when filling starts</small></button>
     <label>Truck barn</label><select id="truckBarn"></select><label>Truck destination field</label><select id="truckField"></select></div>
-   <div class="panel"><button class="big tractor" onclick="addLoad('Tractor',9500)">🚜 9,500-Gallon Tractor<small>Tap when filling starts</small></button>
+   <div class="panel"><button class="big tractor" onclick="addLoad('Tractor',9500)"><svg class="vehicle-icon" viewBox="0 0 150 70" aria-label="Red tractor" role="img"><path d="M45 17h35l12 22H42Z" fill="#e53935" stroke="#7c1717" stroke-width="2"/><rect x="57" y="4" width="29" height="29" rx="2" fill="#b5d9ec" stroke="#7c1717" stroke-width="3"/><path d="M80 29h30l12 20H35l10-20Z" fill="#c62828"/><rect x="105" y="35" width="28" height="7" fill="#b71c1c"/><circle cx="55" cy="52" r="17" fill="#252a30"/><circle cx="55" cy="52" r="8" fill="#c7c7c7"/><circle cx="120" cy="53" r="11" fill="#252a30"/><circle cx="120" cy="53" r="5" fill="#c7c7c7"/></svg>9,500-Gallon Tractor<small>Tap when filling starts</small></button>
     <label>Tractor barn</label><select id="tractorBarn"></select><label>Tractor destination field</label><select id="tractorField"></select></div>
   </div>
   <div class="row"><button class="btn primary" onclick="openManual()">+ Enter a past load manually</button></div>
@@ -108,10 +115,12 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
   <div class="panel"><h2>Barns</h2><div class="row"><input id="newBarn" placeholder="Enter barn name" aria-label="New barn name"><button class="btn primary" onclick="addName('barn')">Add</button></div><div id="barnList"></div></div>
   <div class="panel"><h2>Fields</h2><div class="row"><input id="newField" placeholder="Enter field name" aria-label="New field name"><button class="btn primary" onclick="addName('field')">Add</button></div><div id="fieldList"></div></div>
  </div>
+ <div class="panel"><h2>Loading timer settings</h2><p class="sub">Adjust the countdown for each vehicle.</p><div class="formgrid"><div><label for="tractorMinutes">Tractor load time (minutes)</label><input id="tractorMinutes" type="number" min="0.1" max="180" step="0.5" value="7"></div><div><label for="truckMinutes">Semi load time (minutes)</label><input id="truckMinutes" type="number" min="0.1" max="180" step="0.5" value="5"></div></div><button class="btn primary" style="margin-top:12px" onclick="saveTimerSettings()">Save timer settings</button></div>
  <div class="panel"><h2>Data & backup</h2><p class="sub">Your records are saved in this iPad's browser. Export the Excel workbook regularly as a backup.</p><div class="row"><button class="btn primary" onclick="exportWorkbook()">Export complete Excel workbook</button><button class="btn" onclick="downloadBackup()">Download data backup</button></div><div class="notice">Use this app on the same iPad and browser where loads are recorded. Clearing Safari website data or resetting the iPad can erase locally stored records.</div></div>
 </section>
 <footer>Manure Hauling Tracker · Records are stored on this iPad</footer>
 </main>
+<div id="timerOverlay" class="timer-overlay" role="dialog" aria-modal="true" aria-labelledby="timerTitle"><div class="timer-dialog"><h2 id="timerTitle">Load time</h2><div id="timerClock" class="timer-clock">07:00</div><button class="btn primary" onclick="finishTimer()">Finish Early</button></div></div>
 <script>
 const KEY='manureHaulingTracker_v1';
 const starter={barns:['North Barn','South Barn','West Barn'],fields:['Field 1','Field 2','Field 3','Field 4'],loads:[]};
@@ -133,7 +142,7 @@ function addLoad(type,gallons){
  const now=new Date();
  const load={id:(crypto.randomUUID?crypto.randomUUID():String(Date.now())),number:db.loads.length?Math.max(...db.loads.map(x=>x.number))+1:1,date:dateKey(now),time:now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),timestamp:now.getTime(),equipment:type,barn,field,gallons};
  if(!confirm('Record '+type+' load ('+fmt(gallons)+' gallons)?\\nBarn: '+barn+'\\nField: '+field+'\\nStart time: '+load.time))return;
- db.loads.push(load);save();document.getElementById('setupNotice').textContent='Load #'+load.number+' recorded at '+load.time+'. Ready for the next load.';
+ db.loads.push(load);save();startLoadTimer(type);document.getElementById('setupNotice').textContent='Load #'+load.number+' recorded at '+load.time+'. Ready for the next load.';
 }
 function showTab(id){document.querySelectorAll('.view').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));if(id==='reports')renderReport();window.scrollTo({top:0,behavior:'smooth'})}
 document.querySelectorAll('nav button').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
@@ -171,6 +180,16 @@ function exportWorkbook(){
 }
 function exportReport(){const data=exportRows(filtered());if(window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.length?data:[{'Load #':'No matching loads'}]),'Filtered Report');XLSX.writeFile(wb,'Manure_Hauling_Report.xlsx')}else{const csv=[Object.keys(data[0]||{'Load #':'','Date':'','Start Time':'','Equipment':'','Barn':'','Destination Field':'','Gallons':''}).join(','),...data.map(o=>Object.values(o).map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))].join('\\r\\n');saveBlob(new Blob([csv],{type:'text/csv'}),'Manure_Hauling_Report.csv')}}
 function downloadBackup(){saveBlob(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),'Manure_Hauling_Backup.json')}
+const TIMER_KEY='manureHaulingTracker_timerSettings_v1';
+let timerDeadline=0,timerInterval=null;
+function getTimerSettings(){try{const v=JSON.parse(localStorage.getItem(TIMER_KEY)||'{}');return {Tractor:Number(v.Tractor)>0?Number(v.Tractor):7,Truck:Number(v.Truck)>0?Number(v.Truck):5}}catch(e){return {Tractor:7,Truck:5}}}
+function saveTimerSettings(){const tractor=Number(document.getElementById('tractorMinutes').value),truck=Number(document.getElementById('truckMinutes').value);if(!Number.isFinite(tractor)||!Number.isFinite(truck)||tractor<=0||truck<=0||tractor>180||truck>180){alert('Enter times greater than zero and no more than 180 minutes.');return}localStorage.setItem(TIMER_KEY,JSON.stringify({Tractor:tractor,Truck:truck}));alert('Loading timer settings saved.')}
+function finishTimer(){if(timerInterval!==null){clearInterval(timerInterval);timerInterval=null}timerDeadline=0;document.getElementById('timerOverlay').classList.remove('visible');sessionStorage.removeItem('manureTrackerTimerDeadline')}
+function updateTimer(){const remain=Math.max(0,Math.ceil((timerDeadline-Date.now())/1000));document.getElementById('timerClock').textContent=String(Math.floor(remain/60)).padStart(2,'0')+':'+String(remain%60).padStart(2,'0');if(remain===0)finishTimer()}
+function startLoadTimer(type){finishTimer();timerDeadline=Date.now()+Math.round(getTimerSettings()[type]*60000);sessionStorage.setItem('manureTrackerTimerDeadline',String(timerDeadline));document.getElementById('timerOverlay').classList.add('visible');updateTimer();timerInterval=setInterval(updateTimer,250)}
+const savedTimer=getTimerSettings();document.getElementById('tractorMinutes').value=savedTimer.Tractor;document.getElementById('truckMinutes').value=savedTimer.Truck;
+const resumedDeadline=Number(sessionStorage.getItem('manureTrackerTimerDeadline'));if(resumedDeadline>Date.now()){timerDeadline=resumedDeadline;document.getElementById('timerOverlay').classList.add('visible');updateTimer();timerInterval=setInterval(updateTimer,250)}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&timerDeadline)updateTimer()});
 renderAll();renderReport();
 loadSelectionIds.forEach(id=>document.getElementById(id).addEventListener('change',rememberSelections));
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline support unavailable',e)))}
