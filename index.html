@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#173d2b">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>Manure Hauling Tracker</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -120,6 +121,10 @@ function save(){localStorage.setItem(KEY,JSON.stringify(db));renderAll();renderR
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function fmt(n){return Number(n||0).toLocaleString('en-US')}
 function dateKey(d){return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')}
+const SELECTION_KEY='manureHaulingTracker_equipmentSelections_v1';
+const loadSelectionIds=['truckBarn','truckField','tractorBarn','tractorField'];
+function rememberSelections(){try{const values={};loadSelectionIds.forEach(id=>values[id]=document.getElementById(id).value);localStorage.setItem(SELECTION_KEY,JSON.stringify(values))}catch(e){console.warn('Unable to remember selections',e)}}
+function restoreSelections(){try{const values=JSON.parse(localStorage.getItem(SELECTION_KEY)||'{}');loadSelectionIds.forEach(id=>{const el=document.getElementById(id);if(typeof values[id]==='string'&&Array.from(el.options).some(o=>o.value===values[id]))el.value=values[id]})}catch(e){console.warn('Unable to restore selections',e)}}
 function selected(id){return document.getElementById(id).value}
 function fillSelect(id,items,first){const el=document.getElementById(id),old=el.value;el.innerHTML='<option value="">'+first+'</option>'+items.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('');if(items.includes(old))el.value=old}
 function addLoad(type,gallons){
@@ -138,6 +143,7 @@ function renderAll(){
  document.getElementById('allLoads').textContent=fmt(loads.length);document.getElementById('allGallons').textContent=fmt(total);document.getElementById('todayLoads').textContent=fmt(tod.length);document.getElementById('todayGallons').textContent=fmt(tod.reduce((s,x)=>s+x.gallons,0));
  document.getElementById('recentRows').innerHTML=rowsHTML(tod,false);document.getElementById('historyRows').innerHTML=rowsHTML(loads,true);document.getElementById('historyCount').textContent=loads.length+' records';
  ['truckBarn','tractorBarn','editBarn'].forEach(id=>fillSelect(id,db.barns,'Choose a barn…'));['truckField','tractorField','editField'].forEach(id=>fillSelect(id,db.fields,'Choose a field…'));fillSelect('reportBarn',db.barns,'All barns');fillSelect('reportField',db.fields,'All fields');
+ restoreSelections();
  document.getElementById('barnList').innerHTML=nameList('barn',db.barns);document.getElementById('fieldList').innerHTML=nameList('field',db.fields);
 }
 function nameList(kind,items){return items.length?items.map((n,i)=>`<div class="item"><span>${esc(n)}</span><span class="row"><button class="btn" onclick="renameName('${kind}',${i})">Rename</button><button class="btn danger" onclick="removeName('${kind}',${i})">Remove</button></span></div>`).join(''):'<div class="empty">No names added yet.</div>'}
@@ -166,5 +172,7 @@ function exportWorkbook(){
 function exportReport(){const data=exportRows(filtered());if(window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.length?data:[{'Load #':'No matching loads'}]),'Filtered Report');XLSX.writeFile(wb,'Manure_Hauling_Report.xlsx')}else{const csv=[Object.keys(data[0]||{'Load #':'','Date':'','Start Time':'','Equipment':'','Barn':'','Destination Field':'','Gallons':''}).join(','),...data.map(o=>Object.values(o).map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))].join('\\r\\n');saveBlob(new Blob([csv],{type:'text/csv'}),'Manure_Hauling_Report.csv')}}
 function downloadBackup(){saveBlob(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),'Manure_Hauling_Backup.json')}
 renderAll();renderReport();
+loadSelectionIds.forEach(id=>document.getElementById(id).addEventListener('change',rememberSelections));
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('Offline support unavailable',e)))}
 </script>
 </body></html>
