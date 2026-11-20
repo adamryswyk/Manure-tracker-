@@ -112,7 +112,7 @@ footer{color:var(--muted);font-size:12px;text-align:center;margin:20px 0}
   <div class="panel"><h2>Barns</h2><div class="row"><input id="newBarn" placeholder="Enter barn name" aria-label="New barn name"><button class="btn primary" onclick="addName('barn')">Add</button></div><div id="barnList"></div></div>
   <div class="panel"><h2>Fields</h2><div class="row"><input id="newField" placeholder="Enter field name" aria-label="New field name"><button class="btn primary" onclick="addName('field')">Add</button></div><div id="fieldList"></div></div>
  </div>
- <div class="panel"><h2>Data & backup</h2><p class="sub">Your records are saved in this iPad's browser. Export the Excel workbook regularly as a backup.</p><div class="row"><button class="btn primary" onclick="exportWorkbook()">Export complete Excel workbook</button><button class="btn" onclick="downloadBackup()">Download data backup</button></div><div class="notice">Use this app on the same iPad and browser where loads are recorded. Clearing Safari website data or resetting the iPad can erase locally stored records.</div></div>
+ <div class="panel"><h2>Loading countdown settings</h2><p class="sub">The countdown is only a visual reminder. Loads are recorded immediately when you tap a load button.</p><div class="formgrid"><div><label for="truckMinutes">Truck countdown (minutes)</label><input id="truckMinutes" type="number" min="1" max="120" step="1" value="5"></div><div><label for="tractorMinutes">Tractor countdown (minutes)</label><input id="tractorMinutes" type="number" min="1" max="120" step="1" value="7"></div></div></div><div class="panel"><h2>Data & backup</h2><p class="sub">Your records are saved in this iPad's browser. Export the Excel workbook regularly as a backup.</p><div class="row"><button class="btn primary" onclick="exportWorkbook()">Export complete Excel workbook</button><button class="btn" onclick="downloadBackup()">Download data backup</button><button class="btn" onclick="document.getElementById('restoreFile').click()">Restore data backup</button><input id="restoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreBackup(event)"></div><div class="notice">Use this app on the same iPad and browser where loads are recorded. Clearing Safari website data or resetting the iPad can erase locally stored records.</div></div>
 </section>
 <footer>Manure Hauling Tracker · Records are stored on this iPad</footer>
 </main>
@@ -161,7 +161,7 @@ function openManual(){editingNumber=null;showTab('history');document.getElementB
 function openEdit(num){const x=db.loads.find(y=>y.number===num);if(!x)return;editingNumber=num;showTab('history');document.getElementById('editorTitle').textContent='Edit load #'+num;document.getElementById('editEquip').value=x.equipment;fillSelect('editBarn',[...new Set([...db.barns,x.barn])],'Choose a barn…');fillSelect('editField',[...new Set([...db.fields,x.field])],'Choose a field…');document.getElementById('editBarn').value=x.barn;document.getElementById('editField').value=x.field;document.getElementById('editWhen').value=localInput(new Date(x.timestamp));document.getElementById('loadEditor').style.display='block';document.getElementById('loadEditor').scrollIntoView()}
 function closeEditor(){document.getElementById('loadEditor').style.display='none';editingNumber=null}
 function saveEditor(){const equip=selected('editEquip'),barn=selected('editBarn'),field=selected('editField'),when=selected('editWhen');const d=new Date(when);if(!barn||!field||!when||isNaN(d.getTime())){alert('Select equipment, barn, field, and a valid date and time.');return}const x=editingNumber===null?{number:db.loads.reduce((m,y)=>Math.max(m,y.number),0)+1,id:crypto.randomUUID?crypto.randomUUID():String(Date.now())}:db.loads.find(y=>y.number===editingNumber);if(!x)return;Object.assign(x,{equipment:equip,barn,field,gallons:equip==='Truck'?7000:9500,timestamp:d.getTime(),date:dateKey(d),time:d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}),updatedAt:Date.now()});if(editingNumber===null)db.loads.push(x);closeEditor();save();alert('Load saved. Totals and reports updated.')}
-function deleteLoad(num){if(!confirm('Delete load #'+num+'? This cannot be undone.'))return;db.loads=db.loads.filter(x=>x.number!==num);save()}
+function deleteLoad(num){if(!confirm('Delete load #'+num+'?'))return;localStorage.setItem(KEY+'_before_delete',JSON.stringify(db));db.loads=db.loads.filter(x=>x.number!==num);save()}
 function filtered(){const from=selected('fromDate'),to=selected('toDate'),barn=selected('reportBarn'),field=selected('reportField'),eq=selected('reportEquip');return db.loads.filter(x=>(!from||x.date>=from)&&(!to||x.date<=to)&&(!barn||x.barn===barn)&&(!field||x.field===field)&&(!eq||x.equipment===eq))}
 function renderReport(){const a=filtered();document.getElementById('reportLoads').textContent=fmt(a.length);document.getElementById('reportGallons').textContent=fmt(a.reduce((s,x)=>s+x.gallons,0));document.getElementById('reportTrucks').textContent=fmt(a.filter(x=>x.equipment==='Truck').length);document.getElementById('reportTractors').textContent=fmt(a.filter(x=>x.equipment==='Tractor').length);document.getElementById('reportRows').innerHTML=rowsHTML(a,false)}
 function clearReport(){['fromDate','toDate','reportBarn','reportField','reportEquip'].forEach(id=>document.getElementById(id).value='');renderReport()}
@@ -175,6 +175,21 @@ function exportWorkbook(){
  }else{const csv=[Object.keys(data[0]||{'Load #':'','Date':'','Start Time':'','Equipment':'','Barn':'','Destination Field':'','Gallons':''}).join(','),...data.map(o=>Object.values(o).map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))].join('\\r\\n');saveBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'Manure_Hauling_Loads.csv');alert('Excel export library was unavailable, so a CSV file was exported. It opens in Excel.')}
 }
 function exportReport(){const data=exportRows(filtered());if(window.XLSX){const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(data.length?data:[{'Load #':'No matching loads'}]),'Filtered Report');XLSX.writeFile(wb,'Manure_Hauling_Report.xlsx')}else{const csv=[Object.keys(data[0]||{'Load #':'','Date':'','Start Time':'','Equipment':'','Barn':'','Destination Field':'','Gallons':''}).join(','),...data.map(o=>Object.values(o).map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(','))].join('\\r\\n');saveBlob(new Blob([csv],{type:'text/csv'}),'Manure_Hauling_Report.csv')}}
+async function restoreBackup(event){
+ const file=event.target.files&&event.target.files[0];if(!file)return;
+ try{
+  const candidate=JSON.parse(await file.text());
+  if(!candidate||!Array.isArray(candidate.barns)||!Array.isArray(candidate.fields)||!Array.isArray(candidate.loads))throw Error('Invalid backup format');
+  if(!candidate.barns.every(x=>typeof x==='string')||!candidate.fields.every(x=>typeof x==='string')||!candidate.loads.every(x=>x&&Number.isFinite(x.timestamp)&&Number.isFinite(x.gallons)&&typeof x.barn==='string'&&typeof x.field==='string'&&typeof x.equipment==='string'&&Number.isInteger(x.number)))throw Error('Backup contains invalid records');
+  if(!confirm('Restore '+candidate.loads.length+' loads from this backup? This replaces the current records on this device. Download a current backup first if you need to keep them.'))return;
+  const safety=JSON.stringify(db);
+  localStorage.setItem(KEY+'_before_restore',safety);
+  localStorage.setItem(KEY,JSON.stringify(candidate));
+  db=candidate;closeEditor();renderAll();renderReport();
+  alert('Backup restored. A copy of the previous records was saved on this device.');
+ }catch(e){alert('Backup not restored: '+e.message)}
+ finally{event.target.value=''}
+}
 function downloadBackup(){saveBlob(new Blob([JSON.stringify(db,null,2)],{type:'application/json'}),'Manure_Hauling_Backup.json')}
 
 // Loading timer: load records are saved immediately; countdown is visual only.
